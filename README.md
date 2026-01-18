@@ -8,8 +8,16 @@ POC of a Kong plugin that routes HTTP API calls to an MCP server.
 
 ## Get Started
 
+### MCP Server
+
 ```bash
-make run
+make run-mcp    # note: this is a foreground process
+```
+
+### Kong
+
+```bash
+make run-kong
 
 # validate admin API is running
 deck gateway ping 
@@ -20,14 +28,25 @@ curl "$KONNECT_PROXY_URL/mcp/anything" \
      --no-progress-meter --fail-with-body
 ```
 
-## Commands
+## Reference
+
+### MCP Server 
 
 ```bash
-make all # Build
-make run # Build and run 
-make logs # View Kong logs
-make stop # Stop the container
-make clean # Clean up
+make build-mcp # build 
+make run-mcp # build and run 
+make stop-mcp # stop
+make clean-mcp # remove built files
+```
+
+### Kong
+
+```bash
+make build-kong # build 
+make run-kong # build and run 
+make logs-kong # view Kong logs
+make stop-kong # stop the container
+make clean-kong # remove built files
 ```
 
 ## More Info
