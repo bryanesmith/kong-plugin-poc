@@ -2,9 +2,18 @@ _format_version: "3.0"
 _transform: true
 
 services:
-  - name: example_service
-    url: https://httpbin.konghq.com # change me to http://localhost:<port>
+  - name: mcp_wordle_service
+    url: http://localhost:9999
     routes:
-      - name: example_route
+      - name: mcp_wordle_route
         paths:
-          - /mcp
+          - /mcp/wordle
+        methods:
+          - GET
+          - POST
+          - DELETE
+    plugins:
+      - name: mcp-bridge
+        config:
+          proxy_url: http://localhost:9000
+          timeout: 30000

@@ -1,1 +1,4 @@
 mcp_server/mcp_server
+kong-plugin-mcp/mcp-bridge
+mcp-http-proxy/mcp-http-proxy
+.DS_Store
