@@ -1,10 +1,14 @@
 # kong-plugin-poc
 
-Kong Gateway plugin that provides **Streamable HTTP (SSE)** transport for MCP servers, enabling MCP clients like Windsurf to connect via HTTP.
+POC of custom Wordle MCP server that is routed to a client (e.g., Windsurf) via a Kong Gateway plugin.
+
+This project can be built & ran locally.
 
 ## Architecture
 
-This project demonstrates a complete integration between Kong Gateway, an MCP HTTP Proxy, and an MCP server:
+![Architecture diagram](images/architecture.png)
+
+Key components:
 
 - **Kong Gateway**: Routes HTTP requests and provides API gateway features (auth, rate limiting, etc.)
 - **Kong MCP Bridge Plugin** (Go): Simple HTTP proxy that forwards requests to MCP HTTP Proxy
@@ -43,13 +47,6 @@ This project demonstrates a complete integration between Kong Gateway, an MCP HT
 │ (Go)            │
 └─────────────────┘
 ```
-
-**Key Features:**
-- ✅ **Streamable HTTP (SSE)** transport for MCP protocol
-- ✅ **Compatible with Windsurf** and other MCP clients
-- ✅ **Spec-compliant** using official MCP Go SDK
-- ✅ **Simple architecture** - Kong plugin is just HTTP forwarding (~100 lines)
-- ✅ **Scalable** - Easy to add auth, rate limiting, multiple MCP servers
 
 ## Prerequisites
 
@@ -208,12 +205,58 @@ This Kong MCP proxy can be used with Windsurf and other MCP clients that support
 
 After restarting Windsurf, you'll have access to the `get_wordle_suggestions` tool.
 
-See **[WINDSURF_SETUP.md](WINDSURF_SETUP.md)** for detailed setup instructions.
-
 ## More Info
 
 - [Get started with Kong Gateway](https://developer.konghq.com/gateway/get-started/)
 - [MCP Specification](https://spec.modelcontextprotocol.io/)
 - [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk)
-- [WINDSURF_SETUP.md](WINDSURF_SETUP.md) - Windsurf integration guide
-- [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Technical details
+
+## FAQ
+
+### Why not combine the MCP HTTP Proxy and MCP Server into one component?
+
+The key reason is that there's a mismatch between the MCP SDK and Kong's plugin model, and working around these differences would result in significant complexity. Some of these challenges include:
+
+- **Response Level vs Long Running**: MCP SDK requires a long-running server process to manage sessions and SSE streaming, while Kong's plugin model follows a response-level model that expects synchronous request/response handlers.
+
+- **Manual Session Management**: Kong runs multiple worker processes that don't share memory; implementing a MCP proxy would require significant session management logic, and introduce a dependency on a cache (e.g., Redis) to store session state. A single MCP HTTP Proxy avoids complex cross-worker session synchronization or the need for external session stores like Redis.
+
+- **SSE Streaming Support**: Kong's Plugin Development Kit (PDK) doesn't support Server-Sent Events streaming; separation allows the proxy to handle SSE while Kong simply forwards the stream.
+
+Other reasons to separate the MCP HTTP Proxy from Kong:
+
+- **Fault Isolation**: If the MCP protocol code crashes or has memory leaks, only the proxy process fails while Kong continues serving other routes; merged architecture would crash entire Kong workers.
+
+- **Independent Scaling**: The MCP HTTP Proxy can be scaled independently based on MCP traffic patterns without affecting Kong's routing capacity, and vice versa.
+
+- **Separation of Concerns**: Kong handles what it's best at (HTTP routing, authentication, rate limiting), while the MCP HTTP Proxy focuses solely on MCP protocol complexity (sessions, SSE, JSON-RPC).
+
+- **Reusability**: The MCP HTTP Proxy can be used independently by other clients or services without Kong, making it a reusable component across different deployment scenarios.
+
+- **Simplified Testing**: Each component can be tested in isolation—Kong plugin tests HTTP forwarding, MCP proxy tests protocol compliance—without complex integration test setups.
+
+- **Independent Updates**: MCP protocol changes only require updating the proxy; Kong security patches or configuration changes don't affect MCP functionality.
+
+- **Industry Best Practice**: This follows the sidecar pattern used by production systems like Istio and Dapr, where specialized sidecars handle protocol-specific concerns alongside main services.
+
+### Why use a Kong plugin? Can Kong simply forward the request to the MCP HTTP Proxy?
+
+For this simple example, the plugin is unnecessary - it just performs HTTP forwarding. The equivalent functionality could be achieved natively by Kong using this configuration:
+
+```yaml
+# kong.yml - No plugin needed
+services:
+  - name: mcp_wordle_service
+    url: http://localhost:9000  # MCP HTTP Proxy
+    routes:
+      - name: mcp_wordle_route
+        paths:
+          - /mcp/wordle
+        methods:
+          - GET
+          - POST
+          - DELETE
+        strip_path: false
+```
+
+However, one of the key goals of this project is to create a custom Kong plugin, as I will need the additional flexibility for future development.
