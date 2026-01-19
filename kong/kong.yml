@@ -8,9 +8,13 @@ services:
       - name: mcp_wordle_route
         paths:
           - /mcp/wordle
+        methods:
+          - GET
+          - POST
+          - DELETE
     plugins:
       - name: mcp-bridge
         config:
-          mcp_server_path: /usr/local/bin/mcp_server
-          tool_name: get_wordle_suggestions
-          timeout: 5000
+          mode: http-proxy
+          proxy_url: http://localhost:9000
+          timeout: 30000

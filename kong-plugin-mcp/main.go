@@ -31,6 +31,18 @@ func New() interface{} {
 }
 
 func (conf Config) Access(kong *pdk.PDK) {
+	// Check if we're in HTTP proxy mode
+	if conf.Mode == "http-proxy" {
+		handleHTTPProxy(kong, conf)
+		return
+	}
+
+	// Default to tool mode
+	toolName := conf.ToolName
+	if toolName == "" {
+		toolName = "get_wordle_suggestions"
+	}
+
 	body, err := kong.Request.GetRawBody()
 	if err != nil {
 		kong.Log.Err("Failed to read request body: ", err.Error())

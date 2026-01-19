@@ -5,8 +5,11 @@ IMAGE_TAG := latest
 
 build-mcp:
 	@echo "Building MCP server for Linux..."
-	cd mcp_server && go mod tidy
-	cd mcp_server && GOOS=linux GOARCH=amd64 go build -o mcp_server main.go
+	cd mcp_server && GOOS=linux GOARCH=amd64 go build -o mcp_server .
+
+build-proxy:
+	@echo "Building MCP HTTP proxy for Linux..."
+	cd mcp-http-proxy && GOOS=linux GOARCH=amd64 go build -o mcp-http-proxy .
 
 test-mcp: build-mcp
 	@echo "Testing MCP server..."
@@ -24,7 +27,7 @@ build-plugin:
 	@echo "Building Kong MCP plugin..."
 	cd kong-plugin-mcp && make build
 
-build-kong: build-mcp build-plugin
+build-kong: build-mcp build-proxy build-plugin
 	@echo "Building Docker image..."
 	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) -f kong/Dockerfile .
 
