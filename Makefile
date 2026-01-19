@@ -54,7 +54,7 @@ logs-kong:
 
 test-kong: 
 	@echo "Testing Kong MCP integration..."
-	./test_kong_mcp.sh
+	./test_kong.sh
 
 clean-kong: stop-kong
 	docker rmi $(IMAGE_NAME):$(IMAGE_TAG) || true
