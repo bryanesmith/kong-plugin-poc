@@ -1,14 +1,21 @@
 FROM kong:latest
 
-# Ensure any patching steps are executed as root user
 USER root
 
-# Add custom plugin to the image
-#COPY ./kong/plugins/my-plugin /usr/local/share/lua/5.1/kong/plugins/my-plugin
-#ENV KONG_PLUGINS=bundled,my-plugin
+# Copy MCP server binary
+COPY ./mcp_server/mcp_server /usr/local/bin/mcp_server
+RUN chmod +x /usr/local/bin/mcp_server
 
-# Ensure kong user is selected for image execution
+# Copy Go plugin binary (embedded server)
+COPY ./kong-plugin-mcp/mcp-bridge /usr/local/bin/mcp-bridge
+RUN chmod +x /usr/local/bin/mcp-bridge
+
+# Enable Go plugin support (embedded server style)
+ENV KONG_PLUGINS=bundled,mcp-bridge
+ENV KONG_PLUGINSERVER_NAMES=mcp-bridge
+ENV KONG_PLUGINSERVER_MCP_BRIDGE_START_CMD=/usr/local/bin/mcp-bridge
+ENV KONG_PLUGINSERVER_MCP_BRIDGE_QUERY_CMD="/usr/local/bin/mcp-bridge -dump"
+
 USER kong
 
-# Expose Kong ports
 EXPOSE 8000 8443 8001 8444

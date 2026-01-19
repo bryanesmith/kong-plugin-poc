@@ -4,34 +4,31 @@ IMAGE_NAME := kong-plugin-poc
 IMAGE_TAG := latest
 
 build-mcp:
-	@echo "Building MCP server..."
+	@echo "Building MCP server for Linux..."
 	cd mcp_server && go mod tidy
-	cd mcp_server && go build -o mcp_server main.go
-
-run-mcp: build-mcp
-	@echo "Starting MCP server..."
-	cd mcp_server && ./mcp_server
+	cd mcp_server && GOOS=linux GOARCH=amd64 go build -o mcp_server main.go
 
 test-mcp: build-mcp
 	@echo "Testing MCP server..."
 	cd mcp_server && ./test_request.sh | ./mcp_server
 
-stop-mcp:
-	@echo "Stopping MCP server..."
-	killall mcp_server || true
-
 clean-mcp:
 	@echo "Cleaning MCP server..."
 	cd mcp_server && rm -f mcp_server || true
 
-build-plugin:  ## No-op for now
-	@echo "Plugin build step (no-op)"
+clean-plugin:
+	@echo "Cleaning Kong plugin..."
+	cd kong-plugin-mcp && make clean
 
-build-kong: build-plugin
+build-plugin:
+	@echo "Building Kong MCP plugin..."
+	cd kong-plugin-mcp && make build
+
+build-kong: build-mcp build-plugin
 	@echo "Building Docker image..."
 	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) -f kong/Dockerfile .
 
-run-kong: build-image
+run-kong: build-kong
 	@echo "Starting Kong..."
 	docker run -d \
 		--name kong-dev \
@@ -52,7 +49,13 @@ stop-kong:
 logs-kong:
 	docker logs kong-dev
 
+test-kong: 
+	@echo "Testing Kong MCP integration..."
+	./test_kong_mcp.sh
+
 clean-kong: stop-kong
 	docker rmi $(IMAGE_NAME):$(IMAGE_TAG) || true
 
-#all: build-plugin build-image
+clean: clean-mcp clean-plugin clean-kong
+
+all: build-kong
