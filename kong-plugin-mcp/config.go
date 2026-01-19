@@ -1,9 +1,6 @@
 package main
 
 type Config struct {
-	MCPServerPath string `json:"mcp_server_path"`
-	ToolName      string `json:"tool_name"`
-	Timeout       int    `json:"timeout"`
-	Mode          string `json:"mode"`      // "tool" or "http-proxy"
-	ProxyURL      string `json:"proxy_url"` // URL of MCP HTTP proxy
+	ProxyURL string `json:"proxy_url"` // URL of MCP HTTP proxy (default: http://localhost:9000)
+	Timeout  int    `json:"timeout"`   // Request timeout in milliseconds (default: 30000)
 }
