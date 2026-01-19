@@ -3,6 +3,7 @@ package wordlemcpserver
 import (
 	"context"
 
+	"github.com/bryanesmith/wordle-help/go-sdk/recommendations"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -19,7 +20,24 @@ func GetWordleSuggestions(
 	req *mcp.CallToolRequest,
 	input GetWordleSuggestionsInput,
 ) (*mcp.CallToolResult, GetWordleSuggestionsOutput, error) {
+	// Get recommendations from wordle-help library
+	rated, err := recommendations.NextGuessRecommendations(input.Guesses, recommendations.DefaultDictionaryPath)
+	if err != nil {
+		return nil, GetWordleSuggestionsOutput{}, err
+	}
+
+	// Extract up to first 25 suggestions
+	maxSuggestions := 25
+	if len(rated) < maxSuggestions {
+		maxSuggestions = len(rated)
+	}
+
+	suggestions := make([]string, maxSuggestions)
+	for i := 0; i < maxSuggestions; i++ {
+		suggestions[i] = rated[i].Guess
+	}
+
 	return nil, GetWordleSuggestionsOutput{
-		Suggestions: []string{"apple"},
+		Suggestions: suggestions,
 	}, nil
 }

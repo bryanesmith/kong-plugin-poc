@@ -2,6 +2,9 @@ FROM kong:latest
 
 USER root
 
+# Install dictionary for wordle-help library
+RUN apt-get update && apt-get install -y wamerican && rm -rf /var/lib/apt/lists/*
+
 # Copy MCP server binary
 COPY ./mcp_server/mcp_server /usr/local/bin/mcp_server
 RUN chmod +x /usr/local/bin/mcp_server
